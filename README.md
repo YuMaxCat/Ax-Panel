@@ -35,7 +35,7 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/<your-name>/ax-panel.git
+git clone https://github.com/YuMaxCat/Ax-Panel.git
 cd ax-panel
 npm install
 
