@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+// 主题必须在样式表之前定好，否则会闪一下浅色
+(function () {
+  var t = 'auto';
+  try { t = localStorage.getItem('theme') || 'auto'; } catch (e) { /* ignore */ }
+  var dark = t === 'dark' || (t === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+})();
+</script>
+<title>Ax 面板</title>
+<link rel="icon" id="favicon" href="logo.png">
+<link rel="stylesheet" href="vendor/xterm.css?v=1">
+<link rel="stylesheet" href="css/style.css?v=29">
+<link rel="stylesheet" href="css/drive.css?v=27">
+<link rel="stylesheet" href="css/draw.css?v=27">
+<link rel="stylesheet" href="css/speedtest.css?v=27">
+<link rel="stylesheet" href="css/stats.css?v=27">
+<link rel="stylesheet" href="css/gf.css?v=4">
+</head>
+<body>
+
+<!-- ==================== 侧边栏（桌面） ==================== -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="logo.png" alt="logo" data-logo>
+    <div>
+      <div class="b-name" id="brandName">Ax 面板</div>
+      <div class="b-sub">服务器后台</div>
+    </div>
+  </div>
+  <nav class="nav" id="nav">
+    <button class="nav-item" data-view="overview"><span data-icon="dashboard"></span>概览</button>
+    <button class="nav-item" data-view="sites"><span data-icon="globe"></span>站点管理</button>
+    <button class="nav-item" data-view="files"><span data-icon="folder"></span>文件管理</button>
+    <button class="nav-item" data-view="download"><span data-icon="download"></span>下载</button>
+    <button class="nav-item" data-view="drive"><span data-icon="cloud"></span>云盘</button>
+    <button class="nav-item" data-view="draw"><span data-icon="gift"></span>抽奖</button>
+    <button class="nav-item" data-view="terminal"><span data-icon="terminal"></span>终端</button>
+    <button class="nav-item" data-view="logs"><span data-icon="fileText"></span>日志</button>
+    <button class="nav-item" data-view="process"><span data-icon="cpu"></span>进程</button>
+    <button class="nav-item" data-view="services"><span data-icon="server"></span>服务</button>
+    <button class="nav-item" data-view="cc"><span data-icon="card"></span>部署卡</button>
+    <button class="nav-item" data-view="notify"><span data-icon="bell"></span>通知中心<i class="n-badge" id="navBadge"></i></button>
+    <button class="nav-item" data-view="speedtest"><span data-icon="gauge"></span>测速</button>
+    <button class="nav-item" data-view="stats"><span data-icon="chart"></span>访问统计</button>
+    <button class="nav-item" data-view="gf"><span data-icon="heart"></span>虚拟女友</button>
+    <button class="nav-item" data-view="settings"><span data-icon="settings"></span>设置</button>
+  </nav>
+  <div class="side-foot">
+    <button class="nav-item" id="btnLogout2"><span data-icon="logout"></span>退出登录</button>
+  </div>
+</aside>
+
+<!-- ==================== 主区域 ==================== -->
+<div class="main">
+  <header class="topbar">
+    <h2 id="pageTitle">概览</h2>
+    <span class="sub" id="pageSub"></span>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="btnTheme" title="切换白天 / 黑夜"><span data-icon="moon"></span></button>
+    <button class="icon-btn" id="btnRefresh" title="刷新"><span data-icon="refresh"></span></button>
+    <button class="icon-btn" id="btnBell" title="通知中心"><span data-icon="bell"></span><i class="dot-badge" id="bellDot"></i></button>
+    <button class="icon-btn" id="btnLogout" title="退出登录"><span data-icon="logout"></span></button>
+  </header>
+
+  <div class="views">
+
+    <!-- 概览 -->
+    <section class="view active" id="view-overview">
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <div class="card chart-card">
+        <div class="chart-head">
+          <div class="legend"><i style="background:var(--accent)"></i>CPU</div>
+          <div class="legend"><i style="background:var(--success)"></i>内存</div>
+          <div class="spacer"></div>
+          <span class="badge gray" id="chartHint">最近 10 分钟</span>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart"></canvas></div>
+      </div>
+
+      <div class="section-title">系统信息</div>
+      <div class="info-grid" id="infoGrid"></div>
+
+      <div id="assetSection" hidden>
+        <div class="section-head">
+          <div class="section-title">云资源</div>
+          <button class="btn btn-sm" id="btnRefreshAssets"><span data-icon="refresh"></span>刷新</button>
+        </div>
+        <div class="asset-grid" id="assetGrid"></div>
+      </div>
+    </section>
+
+    <!-- 站点管理 -->
+    <section class="view" id="view-sites">
+      <div class="file-toolbar">
+        <button class="btn btn-sm" id="btnRefreshSites"><span data-icon="refresh"></span>刷新</button>
+        <button class="btn btn-sm btn-primary" id="btnTakeoverAll">全部接管</button>
+        <div class="spacer"></div>
+        <span class="badge gray" id="sitesCount">—</span>
+      </div>
+      <div class="site-list" id="siteList"></div>
+    </section>
+
+    <!-- 文件管理 -->
+    <section class="view" id="view-files">
+      <div class="crumbs" id="crumbs"></div>
+      <div class="file-toolbar">
+        <button class="btn btn-sm" id="btnUp"><span data-icon="up"></span>上一级</button>
+        <button class="btn btn-sm" id="btnNewFolder"><span data-icon="folderPlus"></span>新建文件夹</button>
+        <button class="btn btn-sm" id="btnNewFile"><span data-icon="filePlus"></span>新建文件</button>
+        <button class="btn btn-sm btn-primary" id="btnUpload"><span data-icon="upload"></span>上传</button>
+        <input type="file" id="fileInput" multiple hidden>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" id="btnRefreshFiles"><span data-icon="refresh"></span></button>
+      </div>
+      <div class="file-list" id="fileList"></div>
+    </section>
+
+    <!-- 下载 -->
+    <section class="view" id="view-download">
+      <div class="card dl-card">
+        <div class="dl-url">
+          <input class="input" id="dlUrl" placeholder="粘贴下载链接（http / https）"
+                 autocomplete="off" spellcheck="false" autocapitalize="off">
+          <button class="btn btn-primary" id="btnDlAdd">开始下载</button>
+        </div>
+        <div class="dl-opts">
+          <label class="dl-opt">
+            <span>保存到</span>
+            <input class="input" id="dlDir" autocomplete="off" spellcheck="false" autocapitalize="off">
+          </label>
+          <label class="dl-opt">
+            <span>文件名</span>
+            <input class="input" id="dlName" placeholder="留空自动识别"
+                   autocomplete="off" spellcheck="false" autocapitalize="off">
+          </label>
+          <label class="dl-opt dl-opt-sm">
+            <span>并发</span>
+            <input class="input" id="dlConn" type="number" min="1" max="16" step="1" inputmode="numeric">
+          </label>
+        </div>
+      </div>
+
+      <div class="section-title">任务</div>
+      <div class="file-toolbar">
+        <span class="badge gray" id="dlStat">—</span>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" id="btnDlPurge">清除已完成</button>
+        <button class="btn btn-sm" id="btnDlRefresh"><span data-icon="refresh"></span></button>
+      </div>
+      <div class="dl-list" id="dlList"></div>
+    </section>
+
+    <!-- 云盘 -->
+    <section class="view" id="view-drive">
+      <div class="card drive-cap">
+        <div class="drive-cap-bar"><i id="driveBar"></i></div>
+        <div class="drive-cap-txt" id="driveCapTxt">—</div>
+      </div>
+      <div class="crumbs" id="driveCrumbs"></div>
+      <div class="file-toolbar">
+        <button class="btn btn-sm" id="btnDriveUp"><span data-icon="up"></span>上一级</button>
+        <button class="btn btn-sm" id="btnDriveMkdir"><span data-icon="folderPlus"></span>新建文件夹</button>
+        <button class="btn btn-sm btn-primary" id="btnDriveUpload"><span data-icon="upload"></span>上传</button>
+        <input type="file" id="driveInput" multiple hidden>
+        <div class="spacer"></div>
+        <div class="seg" id="driveSeg">
+          <button data-dview="grid" class="active" title="网格">网格</button>
+          <button data-dview="list" title="列表">列表</button>
+        </div>
+        <button class="btn btn-sm" id="btnDriveRefresh"><span data-icon="refresh"></span></button>
+      </div>
+      <div class="drive-items" id="driveItems"></div>
+    </section>
+
+    <!-- 抽奖 -->
+    <section class="view" id="view-draw">
+      <div class="stage">
+        <section class="box-area">
+          <div class="chest" id="drawChest">
+            <div class="chest-glow"></div>
+            <div class="light-beam"></div>
+            <div class="chest-3d">
+              <div class="cface cbody-front"></div>
+              <div class="cface cbody-back"></div>
+              <div class="cface cbody-right"></div>
+              <div class="cface cbody-left"></div>
+              <div class="cface cbody-bottom"></div>
+              <div class="cface cbody-inner"></div>
+              <div class="clid">
+                <div class="cface clid-top"></div>
+                <div class="cface clid-bottom"></div>
+                <div class="cface clid-front"></div>
+                <div class="cface clid-back"></div>
+                <div class="cface clid-right"></div>
+                <div class="cface clid-left"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="reel-wrap" id="drawReelWrap">
+            <div class="reel" id="drawReel"></div>
+            <div class="reel-marker"></div>
+          </div>
+        </section>
+
+        <div class="result" id="drawResult">
+          <p class="result-label">恭喜</p>
+          <p class="result-name" id="drawResultName"></p>
+        </div>
+
+        <div class="controls">
+          <button class="btn-draw" id="drawBtn" type="button">抽奖</button>
+          <button class="btn-reset" id="drawReset" type="button">重置奖池</button>
+        </div>
+
+        <p class="pool-info" id="drawPoolInfo"></p>
+      </div>
+
+      <button class="btn-sound" id="drawSound" type="button" aria-label="音效开关">
+        <svg class="ico ico-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.6 9.2a4 4 0 0 1 0 5.6"/><path d="M18.4 6.4a8 8 0 0 1 0 11.2"/>
+        </svg>
+        <svg class="ico ico-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16.5 9.5 5 5"/><path d="m21.5 9.5-5 5"/>
+        </svg>
+      </button>
+    </section>
+
+    <!-- 终端 -->
+    <section class="view" id="view-terminal">
+      <div class="term-card">
+        <div class="term-bar">
+          <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
+          <span class="t-title">bash · root</span>
+          <div class="spacer"></div>
+          <button class="icon-btn" id="btnTermReconnect" title="重连"><span data-icon="refresh"></span></button>
+        </div>
+        <div class="term-body" id="termBody"></div>
+      </div>
+    </section>
+
+    <!-- 日志 -->
+    <section class="view" id="view-logs">
+      <div class="log-layout">
+        <div class="log-side" id="logSide"></div>
+        <div class="log-main">
+          <div class="log-toolbar">
+            <span class="badge gray" id="logName">未选择日志</span>
+            <div class="spacer"></div>
+            <button class="btn btn-sm" id="btnLogFollow">暂停跟随</button>
+            <button class="btn btn-sm btn-danger" id="btnLogClear">清空</button>
+          </div>
+          <pre class="log-view" id="logView"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 进程 -->
+    <section class="view" id="view-process">
+      <div class="file-toolbar">
+        <input class="input" id="procSearch" placeholder="搜索进程名 / 命令…">
+        <button class="btn btn-sm" id="btnRefreshProc"><span data-icon="refresh"></span>刷新</button>
+        <label class="tool-toggle" title="系统内核线程，一般无需关注">
+          <span>显示内核线程</span>
+          <button class="switch" id="swProcKernel" type="button"></button>
+        </label>
+        <div class="spacer"></div>
+        <span class="badge gray" id="procCount">—</span>
+      </div>
+      <div class="table-wrap">
+        <table class="ptable">
+          <thead>
+            <tr>
+              <th data-sort="pid">PID</th>
+              <th data-sort="user">用户</th>
+              <th data-sort="cpu">CPU%</th>
+              <th data-sort="mem">内存%</th>
+              <th data-sort="rss">占用</th>
+              <th data-sort="stat">状态</th>
+              <th data-sort="etime">运行</th>
+              <th data-sort="args">命令</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="procBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 服务 -->
+    <section class="view" id="view-services">
+      <div class="file-toolbar">
+        <button class="btn btn-sm" id="btnRefreshServices"><span data-icon="refresh"></span>刷新</button>
+        <span class="badge gray" id="svcCount">—</span>
+        <div class="spacer"></div>
+        <span class="svc-hint">停止 / 重启 pm2 进程，忽略的服务不再产生离线告警</span>
+      </div>
+      <div class="svc-list" id="svcList"></div>
+    </section>
+
+    <!-- 部署卡（Claude Code / Termux + Windows） -->
+    <section class="view" id="view-cc">
+      <div class="file-toolbar">
+        <button class="btn btn-sm" id="btnRefreshCc"><span data-icon="refresh"></span>刷新</button>
+        <button class="btn btn-sm btn-primary" id="btnNewCc"><span data-icon="key"></span>发一张卡</button>
+        <div class="spacer"></div>
+        <span class="badge gray" id="ccCount">—</span>
+      </div>
+      <div class="svc-list" id="ccList"></div>
+    </section>
+
+    <!-- 密钥（卡密） -->
+    <section class="view" id="view-keys">
+      <div class="file-toolbar">
+        <button class="btn btn-sm" id="btnRefreshKeys"><span data-icon="refresh"></span>刷新</button>
+        <button class="btn btn-sm btn-primary" id="btnNewKey"><span data-icon="key"></span>生成密钥</button>
+        <div class="spacer"></div>
+        <span class="badge gray" id="keyCount">—</span>
+      </div>
+      <div class="svc-list" id="keyList"></div>
+    </section>
+
+    <!-- 测速 -->
+    <section class="view" id="view-speedtest">
+      <div class="st-wrap">
+        <div class="st-card">
+          <div class="st-title">下载测速</div>
+          <div class="st-desc">跑两段：<b>面板下载</b>经 Cloudflare 回源到服务器，等于下载云盘文件的真实速度；<b>CF 边缘</b>不回源，只测你到 Cloudflare 节点这一段。前者慢、后者快，说明瓶颈卡在回源。</div>
+          <div class="st-row">
+            <span class="st-label">测试大小</span>
+            <div class="seg" id="stSize">
+              <button data-mb="5">5 MB</button>
+              <button data-mb="10" class="active">10 MB</button>
+              <button data-mb="25">25 MB</button>
+              <button data-mb="50">50 MB</button>
+            </div>
+          </div>
+          <button class="st-go" id="btnSpeedtest">开始测速</button>
+          <div class="st-bar"><i id="stBar"></i></div>
+        </div>
+
+        <div class="st-card">
+          <div class="st-grid">
+            <div class="st-item">
+              <div class="st-item-label">面板下载</div>
+              <div class="st-num"><span id="stPanel">—</span><em>MB/s</em></div>
+              <div class="st-item-sub" id="stPanelSub">经 Cloudflare 回源</div>
+            </div>
+            <div class="st-item">
+              <div class="st-item-label">CF 边缘</div>
+              <div class="st-num"><span id="stEdge">—</span><em>MB/s</em></div>
+              <div class="st-item-sub" id="stEdgeSub">不回源，纯测你到节点</div>
+            </div>
+          </div>
+          <div class="st-meta" id="stMeta">点「开始测速」后显示节点与延迟</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 访问统计 -->
+    <section class="view" id="view-stats">
+      <div class="ws-head">
+        <div class="seg" id="wsTab">
+          <button data-tab="map" class="active">实时地图</button>
+          <button data-tab="rank">排行榜</button>
+          <button data-tab="heat">时段热力</button>
+          <button data-tab="usage">流量用量</button>
+        </div>
+        <span class="spacer"></span>
+        <div class="seg" id="wsRange">
+          <button data-range="today">今天</button>
+          <button data-range="7d" class="active">近 7 天</button>
+          <button data-range="30d">近 30 天</button>
+        </div>
+      </div>
+      <div class="ws-sum" id="wsSum"></div>
+      <div class="ws-pane" id="wsPane-map"></div>
+      <div class="ws-pane" id="wsPane-rank"></div>
+      <div class="ws-pane" id="wsPane-heat"></div>
+      <div class="ws-pane" id="wsPane-usage"></div>
+    </section>
+
+<section class="view" id="view-settings">
+      <div class="card set-card">
+        <div class="section-title">面板 Logo</div>
+        <p class="set-hint">上传后自动居中裁成正方形并缩放，同步替换侧栏、登录页与浏览器标签图标。建议使用方形图片。</p>
+        <div class="logo-row">
+          <img class="logo-preview" id="logoPreview" src="logo.png" alt="logo">
+          <div class="logo-actions">
+            <button class="btn btn-sm btn-primary" id="btnUploadLogo"><span data-icon="image"></span>上传图片</button>
+            <button class="btn btn-sm" id="btnResetLogo">恢复默认</button>
+            <input type="file" id="logoInput" accept="image/*" hidden>
+          </div>
+        </div>
+      </div>
+
+      <div class="card set-card">
+        <div class="section-title">面板信息</div>
+        <div class="set-row">
+          <label class="set-label" for="setName">面板名称</label>
+          <input class="input" id="setName" maxlength="30" placeholder="Ax 面板">
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setDays">登录会话时长</label>
+          <div class="set-inline">
+            <input class="input" id="setDays" type="number" min="1" max="365" placeholder="30">
+            <span class="set-unit">天</span>
+          </div>
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setTheme">界面主题</label>
+          <div class="set-inline">
+            <select class="input" id="setTheme">
+              <option value="auto">跟随系统</option>
+              <option value="light">白天</option>
+              <option value="dark">黑夜</option>
+            </select>
+          </div>
+        </div>
+        <div class="set-actions">
+          <button class="btn btn-primary" id="btnSaveGeneral">保存</button>
+        </div>
+      </div>
+
+      <div class="card set-card">
+        <div class="section-title">登录密钥</div>
+        <p class="set-hint">config.json 只保存密钥的不可逆指纹（scrypt），不存明文。修改需先验证当前密钥。</p>
+        <div class="set-row">
+          <label class="set-label" for="setKeyCur">当前密钥</label>
+          <input class="input" id="setKeyCur" type="password" autocomplete="off" placeholder="输入现在的登录密钥">
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setKeyNew">新密钥</label>
+          <input class="input" id="setKeyNew" type="password" autocomplete="off" placeholder="6~64 位，短一点好记也行">
+        </div>
+        <div class="set-actions">
+          <button class="btn btn-primary" id="btnChangeKey">修改密钥</button>
+        </div>
+      </div>
+
+      <div class="card set-card">
+        <div class="section-title">会话安全</div>
+        <p class="set-hint">轮换会话签名密钥会立刻作废所有已登录的设备与任何伪造 token，你自己会自动续签、不掉线。</p>
+        <div class="set-actions">
+          <button class="btn btn-danger" id="btnRotateSession">重新生成会话密钥</button>
+        </div>
+      </div>
+
+      <div class="card set-card">
+        <div class="section-title">雨云 API</div>
+        <p class="set-hint">只读取云服务器 / 域名的到期时间与续费价，用于概览展示与到期告警。API Key 仅存服务端 config.json，不会下发到浏览器。</p>
+        <div class="set-row">
+          <label class="set-label" for="setRyKey">API Key</label>
+          <input class="input" id="setRyKey" type="password" autocomplete="off" placeholder="留空则保持已保存的 Key 不变">
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setRyDays">提前提醒</label>
+          <div class="set-inline">
+            <input class="input" id="setRyDays" type="number" min="1" max="90" placeholder="7">
+            <span class="set-unit">天</span>
+          </div>
+        </div>
+        <div class="set-row">
+          <label class="set-label">启用监控</label>
+          <label class="tool-toggle">
+            <span>到期前推送告警</span>
+            <button class="switch" id="swRainyun" type="button"></button>
+          </label>
+        </div>
+        <div class="set-actions">
+          <button class="btn btn-primary" id="btnSaveRainyun">保存</button>
+        </div>
+      </div>
+
+      <div class="card set-card">
+        <div class="section-title">模块开关</div>
+        <p class="set-hint">这里管的是面板自己的几个功能模块。关掉的模块会从侧栏隐藏、接口同时停用，配置不会丢。</p>
+
+        <div class="set-row">
+          <label class="set-label">访问统计</label>
+          <label class="tool-toggle">
+            <span>解析 nginx 日志，统计访客、来源与流量</span>
+            <button class="switch" id="swModWeblog" type="button"></button>
+          </label>
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setWeblogDays">数据保留</label>
+          <div class="set-inline">
+            <input class="input" id="setWeblogDays" type="number" min="7" max="365" placeholder="92">
+            <span class="set-unit">天</span>
+          </div>
+        </div>
+        <div class="set-actions">
+          <button class="btn" id="btnSaveWeblog">保存</button>
+        </div>
+
+        <div class="set-sep"></div>
+
+        <div class="set-row">
+          <label class="set-label">离线下载</label>
+          <label class="tool-toggle">
+            <span>服务器代下 HTTP / 磁力链接</span>
+            <button class="switch" id="swModDownload" type="button"></button>
+          </label>
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setDlConns">默认连接数</label>
+          <div class="set-inline">
+            <input class="input" id="setDlConns" type="number" min="1" max="16" placeholder="4">
+            <span class="set-unit">条</span>
+          </div>
+        </div>
+        <div class="set-actions">
+          <button class="btn" id="btnSaveDownload">保存</button>
+        </div>
+
+        <div class="set-sep"></div>
+
+        <div class="set-row">
+          <label class="set-label">云盘</label>
+          <label class="tool-toggle">
+            <span>在面板里存取文件</span>
+            <button class="switch" id="swModDrive" type="button"></button>
+          </label>
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setDriveQuota">空间配额</label>
+          <div class="set-inline">
+            <input class="input" id="setDriveQuota" type="number" min="0" max="1024" placeholder="10">
+            <span class="set-unit">GB（0 = 不限）</span>
+          </div>
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setDriveUpload">单文件上限</label>
+          <div class="set-inline">
+            <input class="input" id="setDriveUpload" type="number" min="1" max="2048" placeholder="2048">
+            <span class="set-unit">MB</span>
+          </div>
+        </div>
+        <div class="set-actions">
+          <button class="btn" id="btnSaveDrive">保存</button>
+        </div>
+
+        <div class="set-sep"></div>
+
+        <div class="set-row">
+          <label class="set-label">部署卡</label>
+          <label class="tool-toggle">
+            <span>对外提供客户部署脚本</span>
+            <button class="switch" id="swModCc" type="button"></button>
+          </label>
+        </div>
+        <div class="set-row">
+          <label class="set-label" for="setCcHost">面板地址</label>
+          <input class="input" id="setCcHost" maxlength="120" placeholder="https://example.com">
+        </div>
+        <p class="set-hint set-hint-in">客户脚本靠这个地址回连面板领取配置，改错会让新装的客户连不上。</p>
+        <div class="set-actions">
+          <button class="btn" id="btnSaveCc">保存</button>
+        </div>
+
+        <div class="set-row">
+          <label class="set-label">登录诱饵</label>
+          <label class="tool-toggle">
+            <span>埋一批假后台入口，撞上来的一律完整记录</span>
+            <button class="switch" id="swModDecoy" type="button"></button>
+          </label>
+        </div>
+        <div class="set-row set-row-top">
+          <label class="set-label" for="setDecoyPaths">诱饵路径</label>
+          <textarea class="input set-area" id="setDecoyPaths" rows="7" spellcheck="false" placeholder="/admin&#10;/manage&#10;/wp-login.php"></textarea>
+        </div>
+        <p class="set-hint set-hint-in">一行一条。只放「在那儿摆一个登录页说得通」的路径 —— 埋 <span class="mono">/.env</span> 却回一个登录页，反而等于告诉对方这是诱饵。子路径自动覆盖（<span class="mono">/admin</span> 含 <span class="mono">/admin/xxx</span>）。</p>
+        <div class="set-row">
+          <label class="set-label">面板内提醒</label>
+          <label class="tool-toggle">
+            <span>被踩时推一条通知到面板</span>
+            <button class="switch" id="swDecoyNotify" type="button"></button>
+          </label>
+        </div>
+        <div class="set-row">
+          <label class="set-label">外发到手机</label>
+          <label class="tool-toggle">
+            <span>同时推到 Server酱 / ntfy（会占每天的额度）</span>
+            <button class="switch" id="swDecoyExternal" type="button"></button>
+          </label>
+        </div>
+        <div class="set-actions">
+          <button class="btn" id="btnSaveDecoy">保存</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 通知中心 -->
+    <section class="view" id="view-notify">
+      <div class="file-toolbar">
+        <button class="btn btn-sm" id="btnNotifyReadAll">全部已读</button>
+        <button class="btn btn-sm btn-danger" id="btnNotifyClear">清空</button>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" id="btnRefreshNotify"><span data-icon="refresh"></span></button>
+      </div>
+      <div class="notify-list" id="notifyList"></div>
+    </section>
+
+    <!-- 虚拟女友（gf-bot） -->
+    <section class="view" id="view-gf">
+      <div class="gf-profile">
+        <img class="gf-avatar" src="/api/gf/avatar" alt="虚拟女友">
+        <div class="gf-who">
+          <h2 class="gf-nick">虚拟女友</h2>
+          <div class="gf-state"><span class="gf-dot" id="gfDot"></span><span id="gfStateText">读取中…</span></div>
+          <div class="gf-note" id="gfNote"></div>
+        </div>
+        <div class="gf-tools">
+          <button class="btn" data-act="wake">叫醒她</button>
+          <button class="btn" data-act="reload">刷新</button>
+        </div>
+      </div>
+
+      <div class="gf-metrics">
+        <div class="gf-metric"><div class="s-label">她记得的事</div><div class="s-main" id="gfStMem">—</div></div>
+        <div class="gf-metric"><div class="s-label">聊过多少句</div><div class="s-main" id="gfStMsgs">—</div></div>
+        <div class="gf-metric"><div class="s-label">她自己的日子</div><div class="s-main" id="gfStLife">—</div></div>
+        <div class="gf-metric"><div class="s-label">心情</div><div class="s-main" id="gfStMood">—</div></div>
+      </div>
+
+      <div class="gf-tabs">
+        <button class="gf-tab on" data-tab="overview">概览</button>
+        <button class="gf-tab" data-tab="memory">记忆</button>
+        <button class="gf-tab" data-tab="chat">对话</button>
+        <button class="gf-tab" data-tab="log">日志</button>
+        <button class="gf-tab" data-tab="tuning">调校</button>
+        <button class="gf-tab" data-tab="persona">人设</button>
+      </div>
+
+      <div class="gf-pane on" id="gfPane-overview">
+        <div class="card gf-mb">
+          <div class="gf-sec"><b>让她说一句</b><span>以她的身份发到 QQ，测链路用</span></div>
+          <input class="input gf-full" id="gfSayText" placeholder="说点什么…">
+          <div class="gf-actions"><button class="btn btn-primary" data-act="say">发出去</button></div>
+        </div>
+
+        <div class="card gf-mb">
+          <div class="gf-sec"><b>清记忆</b><span>不可逆，想好了再点</span></div>
+          <div class="gf-actions" style="margin-top:0">
+            <button class="btn btn-danger" data-act="clear-messages">清聊天记录</button>
+            <button class="btn btn-danger" data-act="clear-facts">清关于他的记忆</button>
+            <button class="btn btn-danger" data-act="clear-life">清她的日子</button>
+            <button class="btn btn-danger" data-act="clear-all">全部清空</button>
+          </div>
+          <p class="gf-hint">
+            「清聊天记录」只删对话历史，她记得的事还在。<br>
+            「全部清空」之后她就完全不认识你了 —— 像刚认识那样。
+          </p>
+        </div>
+      </div>
+
+      <div class="gf-pane" id="gfPane-memory"><div id="gfMemoryBody"><div class="empty">读取中…</div></div></div>
+
+      <div class="gf-pane" id="gfPane-chat"><div class="card" id="gfChatBody"><div class="empty">读取中…</div></div></div>
+
+      <div class="gf-pane" id="gfPane-log"><div class="card" id="gfLogBody"><div class="empty">读取中…</div></div></div>
+
+      <div class="gf-pane" id="gfPane-tuning"><div id="gfTuningBody"><div class="empty">读取中…</div></div></div>
+
+      <div class="gf-pane" id="gfPane-persona">
+        <div class="card">
+          <div class="gf-sec"><b>补充设定</b><span>追加在代码里那份人设的后面</span></div>
+          <textarea class="gf-editor" id="gfPersona"
+                    placeholder="在这儿补想让她记住的设定、说话习惯、称呼…&#10;&#10;写在这里的东西不会被代码更新冲掉。"></textarea>
+          <div class="gf-actions"><button class="btn btn-primary" data-act="save-persona">保存</button></div>
+          <p class="gf-hint">
+            这一段比内置人设松、比记忆紧 —— 适合放「她怎么称呼你」「她的口癖」「最近这段时间的基调」这类。
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 移动端 Dock -->
+<nav class="dock" id="dock">
+  <button class="dock-item" data-view="overview"><span data-icon="dashboard"></span>概览</button>
+  <button class="dock-item" data-view="sites"><span data-icon="globe"></span>站点</button>
+  <button class="dock-item" data-view="files"><span data-icon="folder"></span>文件</button>
+  <button class="dock-item" data-view="download"><span data-icon="download"></span>下载</button>
+  <button class="dock-item" data-view="drive"><span data-icon="cloud"></span>云盘</button>
+  <button class="dock-item" data-view="draw"><span data-icon="gift"></span>抽奖</button>
+  <button class="dock-item" data-view="terminal"><span data-icon="terminal"></span>终端</button>
+  <button class="dock-item" data-view="logs"><span data-icon="fileText"></span>日志</button>
+  <button class="dock-item" data-view="process"><span data-icon="cpu"></span>进程</button>
+  <button class="dock-item" data-view="services"><span data-icon="server"></span>服务</button>
+  <button class="dock-item" data-view="cc"><span data-icon="card"></span>部署</button>
+  <button class="dock-item" data-view="notify"><span data-icon="bell"></span>通知<i class="dot-badge" id="dockDot"></i></button>
+  <button class="dock-item" data-view="speedtest"><span data-icon="gauge"></span>测速</button>
+  <button class="dock-item" data-view="stats"><span data-icon="chart"></span>统计</button>
+  <button class="dock-item" data-view="gf"><span data-icon="heart"></span>女友</button>
+  <button class="dock-item" data-view="settings"><span data-icon="settings"></span>设置</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- 云盘：拖拽上传遮罩 + 上传队列 -->
+<div class="drive-drop" id="driveDrop"><div>松开以上传到当前文件夹</div></div>
+
+<div class="drive-uploads" id="driveUploads">
+  <div class="du-head"><span>上传</span><button class="icon-btn" id="driveUploadsClose" title="收起"><span data-icon="close"></span></button></div>
+  <div class="du-list" id="driveUploadsList"></div>
+</div>
+
+<!-- 在线编辑器 -->
+<div class="editor-mask" id="editorMask">
+  <div class="editor">
+    <div class="editor-bar">
+      <span class="editor-name" id="editorName"></span>
+      <span class="editor-hint" id="editorHint"></span>
+      <div class="spacer"></div>
+      <button class="btn btn-sm" id="btnEditorCancel">关闭</button>
+      <button class="btn btn-sm btn-primary" id="btnEditorSave">保存</button>
+    </div>
+    <textarea class="editor-body" id="editorBody" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+  </div>
+</div>
+
+<div class="modal-mask" id="modalMask"><div class="modal" id="modal"></div></div>
+
+<script src="vendor/xterm.js?v=1"></script>
+<script src="vendor/addon-fit.js?v=1"></script>
+<!-- 模块脚本先于 app.js：app.js 初始化时可能直接落到该视图 -->
+<script src="js/drive.js?v=27"></script>
+<script src="js/draw.js?v=28"></script>
+<script src="js/speedtest.js?v=27"></script>
+<script src="js/stats.js?v=27"></script>
+<script src="js/gf.js?v=4"></script>
+<script src="js/app.js?v=34"></script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+/* ============================================================
+   Ax 面板 · 云盘
+   颜色 / 圆角 / 阴影全部取面板的 CSS 变量，跟随亮暗主题
+   ============================================================ */
+
+/* ---------- 容量条 ---------- */
+.drive-cap { padding: 14px 16px; margin-bottom: 14px; }
+
+.drive-cap-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--separator);
+  overflow: hidden;
+}
+
+.drive-cap-bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width .35s ease;
+}
+
+.drive-cap-txt {
+  margin-top: 9px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.drive-cap-txt b { color: var(--text); font-weight: 600; }
+
+/* ---------- 网格 / 列表切换 ---------- */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--accent-fill);
+}
+
+.seg > button {
+  padding: 5px 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+}
+
+.seg > button.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---------- 条目容器 ---------- */
+.drive-items { min-height: 120px; }
+
+.drive-items.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
+}
+
+/* 空态占满整行，别被挤进一个格子 */
+.drive-items.grid .empty { grid-column: 1 / -1; }
+
+.drive-items.list { display: flex; flex-direction: column; gap: 6px; }
+
+/* ---------- 单个条目 ---------- */
+.dt {
+  position: relative;
+  border: 1px solid var(--separator);
+  background: var(--glass-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.dt:hover {
+  transform: translateY(-2px);
+  border-color: var(--separator-2);
+  box-shadow: var(--shadow-sm);
+}
+
+.dt.dragging { opacity: .45; }
+
+.dt.drop-on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.dt-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+}
+
+.dt-thumb svg { width: 26px; height: 26px; }
+.dt-thumb.dir { color: var(--accent); }
+
+.dt-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.dt-meta { color: var(--text-3); font-size: 12px; }
+
+.dt-more {
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .16s, background .16s, color .16s;
+}
+
+.dt:hover .dt-more, .dt-more:focus-visible { opacity: 1; }
+.dt-more:hover { background: var(--accent-fill-2); color: var(--accent); }
+
+/* 网格：缩略图在上，信息在下 */
+.drive-items.grid .dt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 10px 12px;
+  text-align: center;
+}
+
+.drive-items.grid .dt-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.drive-items.grid .dt-name { max-width: 100%; font-size: 13px; }
+.drive-items.grid .dt-more { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; }
+.drive-items.grid .dt-meta { font-size: 11.5px; }
+
+/* 列表：一行一条 */
+.drive-items.list .dt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+}
+
+.drive-items.list .dt:hover { transform: none; }
+.drive-items.list .dt-thumb { width: 30px; height: 30px; flex: 0 0 30px; }
+.drive-items.list .dt-name { flex: 1 1 auto; min-width: 0; }
+.drive-items.list .dt-meta { flex: 0 0 auto; }
+.drive-items.list .dt-more { width: 30px; height: 30px; flex: 0 0 30px; }
+
+/* 触屏没有 hover，把 ⋯ 常显出来 */
+@media (hover: none) {
+  .dt-more { opacity: 1; }
+}
+
+/* ---------- 条目菜单 ---------- */
+.drive-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 152px;
+  padding: 5px;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.drive-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.drive-menu > button:hover { background: var(--accent-fill); }
+.drive-menu > button.danger { color: var(--danger); }
+.drive-menu > button.danger:hover { background: var(--danger-fill); }
+.drive-menu > hr { margin: 4px 8px; border: 0; border-top: 1px solid var(--separator); }
+
+/* ---------- 上传队列 ---------- */
+.drive-uploads {
+  position: fixed;
+  right: 18px;
+  bottom: calc(var(--dock-h) + 18px);
+  z-index: 55;
+  width: min(310px, calc(100vw - 36px));
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  background: var(--glass-strong);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity .22s ease, transform .22s ease;
+}
+
+.drive-uploads.show { opacity: 1; transform: none; pointer-events: auto; }
+
+.du-head {
+  display: flex;
+  align-items: center;
+  padding: 10px 10px 10px 14px;
+  border-bottom: 1px solid var(--separator);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.du-head .icon-btn { margin-left: auto; }
+
+.du-list { max-height: 240px; overflow-y: auto; padding: 8px; }
+
+.du-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  padding: 7px 8px;
+  border-radius: 10px;
+}
+
+.du-row + .du-row { margin-top: 4px; }
+
+.du-name {
+  grid-column: 1 / 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+
+.du-pct { grid-column: 2 / 3; font-size: 12px; color: var(--text-2); }
+
+.du-bar {
+  grid-column: 1 / 3;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--separator);
+  overflow: hidden;
+}
+
+.du-bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width .2s ease;
+}
+
+.du-row.done .du-pct { color: var(--success); }
+.du-row.done .du-bar > i { background: var(--success); }
+.du-row.err .du-pct { color: var(--danger); }
+.du-row.err .du-bar > i { background: var(--danger); width: 100% !important; }
+
+/* ---------- 拖拽上传遮罩 ---------- */
+.drive-drop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+}
+
+.drive-drop.show { opacity: 1; }
+
+.drive-drop > div {
+  padding: 28px 40px;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .drive-items.grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+  .drive-uploads { right: 12px; left: 12px; width: auto; }
+}

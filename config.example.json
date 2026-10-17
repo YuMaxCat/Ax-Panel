@@ -1,0 +1,120 @@
+{
+  "host": "127.0.0.1",
+  "port": 9906,
+  "name": "Ax 面板",
+  "secretKey": "change-me",
+  "sessionSecret": "",
+  "sessionDays": 30,
+  "nginx": {
+    "vhostDir": "/etc/nginx/conf.d",
+    "stateDir": "/etc/nginx/admin-state",
+    "bin": "/usr/sbin/nginx",
+    "conf": "/etc/nginx/nginx.conf",
+    "maintRoot": "/opt/Ax-Panel/maint"
+  },
+  "acme": {
+    "sh": "/root/.acme.sh/acme.sh",
+    "dir": "/root/.acme.sh"
+  },
+  "fileRoots": [
+    "/opt",
+    "/etc",
+    "/root",
+    "/"
+  ],
+  "pm2LogDir": "/root/.pm2/logs",
+  "wwwLogDir": "/var/log/nginx",
+  "uptime": {
+    "enabled": true,
+    "intervalMs": 300000,
+    "timeoutMs": 10000,
+    "failThreshold": 2,
+    "upThreshold": 2
+  },
+  "iploc": {
+    "enabled": true,
+    "url": "http://127.0.0.1:9901/api/location",
+    "timeoutMs": 2500
+  },
+  "weblog": {
+    "enabled": true,
+    "file": "/var/log/nginx/access.log",
+    "intervalMs": 30000,
+    "retentionDays": 92
+  },
+  "rainyun": {
+    "enabled": false,
+    "apiKey": "",
+    "baseUrl": "https://api.v2.rainyun.com",
+    "refreshMs": 1800000,
+    "expireWarnDays": 7
+  },
+  "alert": {
+    "serverchan": {
+      "enabled": true,
+      "sendKey": "",
+      "endpoint": "",
+      "dailyLimit": 5
+    },
+    "ntfy": {
+      "enabled": true,
+      "endpoint": "https://ntfy.sh",
+      "topic": "",
+      "token": ""
+    }
+  },
+  "push": {
+    "token": ""
+  },
+  "gf": {
+    "enabled": false,
+    "url": "http://127.0.0.1:9920",
+    "adminToken": ""
+  },
+  "download": {
+    "enabled": false,
+    "rpcUrl": "http://127.0.0.1:6800/jsonrpc",
+    "rpcSecret": "",
+    "dir": "/opt/Ax-Panel/data/downloads",
+    "connections": 16,
+    "timeoutMs": 8000
+  },
+  "drive": {
+    "enabled": true,
+    "db": "data/drive.sqlite",
+    "storage": "data/drive-storage",
+    "maxUploadSize": 2147483648,
+    "diskQuota": 10737418240
+  },
+  "decoy": {
+    "enabled": false,
+    "salt": "",
+    "paths": [
+      "/admin",
+      "/manage",
+      "/manager",
+      "/panel",
+      "/dashboard",
+      "/cp",
+      "/controlpanel",
+      "/administrator",
+      "/adminarea",
+      "/login.php",
+      "/user/login",
+      "/wp-login.php",
+      "/wp-admin",
+      "/phpmyadmin",
+      "/pma",
+      "/adminer.php"
+    ],
+    "notify": false,
+    "external": false,
+    "max": 1000
+  },
+  "cc": {
+    "enabled": false,
+    "salt": "",
+    "host": "https://panel.example.com",
+    "offlineGraceDays": 7
+  }
+}

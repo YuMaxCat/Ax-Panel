@@ -1,0 +1,289 @@
+/* ============================================================
+   Ax 面板 · 访问统计
+   规则全部限定在 #view-stats 下，只用 :root 的主题变量
+   ============================================================ */
+
+/* ---------- 头部：时间范围 + 分页 ---------- */
+#view-stats .ws-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+#view-stats .ws-head .spacer { flex: 1; }
+
+/* ---------- 汇总数字 ---------- */
+#view-stats .ws-sum {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+#view-stats .ws-sum > div {
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  box-shadow: var(--shadow-sm);
+}
+#view-stats .ws-sum .k { font-size: 11.5px; color: var(--text-3); letter-spacing: .3px; }
+#view-stats .ws-sum .v { font-size: 21px; font-weight: 600; margin-top: 5px; color: var(--text); }
+#view-stats .ws-sum .v em { font-size: 12px; font-style: normal; color: var(--text-3); margin-left: 3px; }
+
+/* ---------- 分页 ---------- */
+#view-stats .ws-pane { display: none; }
+#view-stats .ws-pane.on { display: block; animation: viewIn .25s ease both; }
+
+/* ---------- 实时地图 ---------- */
+#view-stats .ws-map-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(240px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+#view-stats .ws-map-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px 8px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+#view-stats .ws-map-card svg { display: block; width: 100%; height: auto; }
+#view-stats .ws-prov { fill: var(--accent-fill-2); stroke: var(--separator-2); stroke-width: 1; }
+#view-stats .ws-bub { cursor: pointer; }
+#view-stats .ws-bub .halo { fill: var(--accent); opacity: .18; }
+#view-stats .ws-bub .core { fill: var(--accent); }
+#view-stats .ws-bub text {
+  font-size: 9px;
+  fill: var(--text-2);
+  text-anchor: middle;
+  pointer-events: none;
+}
+#view-stats .ws-bub:hover .halo { opacity: .34; }
+
+#view-stats .ws-tip {
+  position: absolute;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--glass-strong);
+  border: 1px solid var(--separator);
+  box-shadow: var(--shadow-sm);
+  font-size: 12px;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+#view-stats .ws-tip.on { opacity: 1; }
+#view-stats .ws-map-foot {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 2px 6px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+/* ---------- 最近访客 ---------- */
+#view-stats .ws-live {
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+#view-stats .ws-live-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--separator);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+#view-stats .ws-live-head .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-fill);
+}
+#view-stats .ws-live-list { max-height: 420px; overflow-y: auto; }
+#view-stats .ws-live-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 15px;
+  border-bottom: 1px solid var(--separator);
+  font-size: 12.5px;
+  animation: wsIn .35s ease both;
+}
+#view-stats .ws-live-row:last-child { border-bottom: 0; }
+@keyframes wsIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+#view-stats .ws-live-row .who { min-width: 0; flex: 1; }
+#view-stats .ws-live-row .loc { color: var(--text); }
+#view-stats .ws-live-row .ip { color: var(--text-3); font-size: 11px; }
+#view-stats .ws-live-row .p {
+  color: var(--text-2);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+#view-stats .ws-live-row .tm { color: var(--text-3); font-size: 11px; flex-shrink: 0; }
+
+/* ---------- 排行榜 ---------- */
+#view-stats .ws-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+#view-stats .ws-rank-card {
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  padding: 15px 17px 6px;
+  box-shadow: var(--shadow-sm);
+}
+#view-stats .ws-rank-card h4 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: .3px;
+}
+#view-stats .ws-rrow { margin-bottom: 11px; }
+#view-stats .ws-rrow .top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  margin-bottom: 5px;
+}
+#view-stats .ws-rrow .nm {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#view-stats .ws-rrow .nm.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; }
+#view-stats .ws-rrow .n { color: var(--text-2); flex-shrink: 0; }
+#view-stats .ws-rrow .track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--separator);
+  overflow: hidden;
+}
+#view-stats .ws-rrow .track i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width .45s ease;
+}
+#view-stats .ws-chips { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 10px; }
+
+/* ---------- 时段热力 ---------- */
+#view-stats .ws-heat-card {
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+#view-stats .ws-heat {
+  display: grid;
+  grid-template-columns: 44px repeat(24, minmax(14px, 1fr));
+  gap: 3px;
+  min-width: 460px;
+  max-width: 820px;   /* 不限宽的话格子会被拉成长条，不像热力图 */
+}
+#view-stats .ws-heat .hh {
+  font-size: 10px;
+  color: var(--text-3);
+  text-align: center;
+  align-self: end;
+  padding-bottom: 3px;
+}
+#view-stats .ws-heat .hd { font-size: 10.5px; color: var(--text-3); line-height: 20px; }
+#view-stats .ws-heat .hc { background: var(--separator); border-radius: 4px; height: 20px; overflow: hidden; }
+#view-stats .ws-heat .hc i { display: block; height: 100%; background: var(--accent); }
+#view-stats .ws-heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+#view-stats .ws-heat-legend span { display: block; width: 16px; height: 10px; border-radius: 3px; background: var(--accent); }
+
+/* ---------- 流量用量 ---------- */
+#view-stats .ws-usage-card {
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+}
+#view-stats .ws-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 4px; }
+#view-stats .ws-legend > div { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); }
+#view-stats .ws-legend i { width: 9px; height: 9px; border-radius: 3px; }
+#view-stats .ws-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 190px;
+  margin-top: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--separator);
+  overflow-x: auto;
+}
+#view-stats .ws-bar {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 10px;
+  max-width: 46px;    /* 一个月只有两三天数据时，别让柱子摊成一整块 */
+  height: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+  border-radius: 4px 4px 0 0;
+  background: var(--surface-2);
+  overflow: visible;
+}
+#view-stats .ws-bar i { display: block; width: 100%; }
+#view-stats .ws-bar .d {
+  position: absolute;
+  bottom: -17px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9.5px;
+  color: var(--text-3);
+}
+#view-stats .ws-bar:hover { outline: 1px solid var(--accent); }
+
+/* ---------- 移动端 ---------- */
+@media (max-width: 860px) {
+  #view-stats .ws-map-wrap { grid-template-columns: 1fr; }
+  #view-stats .ws-live-list { max-height: 300px; }
+  /* 窄屏下两个 seg 各占一整行，否则四段文字会被挤成竖排 */
+  #view-stats .ws-head .spacer { display: none; }
+  #view-stats .ws-head .seg { flex: 1 1 100%; }
+  #view-stats .ws-head .seg > button {
+    flex: 1;
+    padding: 7px 4px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+}

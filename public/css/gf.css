@@ -1,0 +1,305 @@
+/* ============================================================
+   虚拟女友（gf-bot）—— 只管面板本来没有的东西
+
+   按钮、卡片、徽标、空状态、输入框、开关一律用 style.css 里的
+   .btn / .card / .badge / .empty / .input / .switch，别另造一套。
+   这里只有：她的头像区、指标网格、页签、聊天气泡、等宽日志。
+   ============================================================ */
+
+/* ── 顶部：她是谁、此刻在干嘛 ── */
+.gf-profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 22px;
+  margin-bottom: 14px;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  background:
+    radial-gradient(120% 150% at 0% 0%, var(--accent-fill) 0%, transparent 60%),
+    radial-gradient(100% 130% at 100% 100%, var(--accent-fill) 0%, transparent 55%),
+    var(--surface);
+}
+
+.gf-avatar {
+  flex: none;
+  width: 92px;
+  height: 92px;
+  border-radius: 20px;
+  object-fit: cover;
+  background: var(--surface-2);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.gf-who { flex: 1; min-width: 0; }
+
+.gf-nick {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: .4px;
+  color: var(--text);
+}
+
+.gf-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.gf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--text-3);
+  transition: background .3s, box-shadow .3s;
+}
+.gf-dot.ok { background: var(--success); box-shadow: 0 0 0 3px var(--success-fill); }
+.gf-dot.away { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-fill); }
+.gf-dot.bad { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-fill); }
+
+/* 她此刻的心情 / 刚说的那句 */
+.gf-note {
+  margin-top: 9px;
+  padding-left: 11px;
+  border-left: 2px solid var(--accent-fill-2);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gf-note:empty { display: none; }
+
+.gf-tools { flex: none; display: flex; flex-direction: column; gap: 8px; }
+
+/* ── 指标（用面板 .stat-card 的壳，这里只管网格和内文） ── */
+.gf-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.gf-metric {
+  padding: 15px 17px;
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.gf-metric .s-label {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+.gf-metric .s-main {
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -.3px;
+}
+.gf-metric .s-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-3);
+  margin-left: 5px;
+}
+
+/* ── 页签 ── */
+.gf-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  margin-bottom: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--separator);
+  border-radius: 13px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.gf-tabs::-webkit-scrollbar { display: none; }
+
+.gf-tab {
+  flex: 1;
+  min-width: 64px;
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .18s ease, color .18s ease;
+}
+.gf-tab:hover { color: var(--text); }
+.gf-tab.on {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.gf-pane { display: none; }
+.gf-pane.on { display: block; animation: gfIn .24s ease both; }
+@keyframes gfIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.gf-mb { margin-bottom: 12px; }
+
+/* 卡片里的小标题 */
+.gf-sec {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.gf-sec b { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.gf-sec span { font-size: 11.5px; color: var(--text-3); }
+
+/* 列表行 */
+.gf-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  margin: 0 -12px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
+  transition: background .15s ease;
+}
+.gf-line:hover { background: var(--surface-2); }
+.gf-line .t { flex: 1; min-width: 0; word-break: break-word; }
+.gf-line .m { flex: none; font-size: 11px; color: var(--text-3); padding-top: 3px; }
+
+/* ── 对话 ── */
+.gf-msgs {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.gf-msg { display: flex; align-items: flex-end; gap: 8px; }
+.gf-msg.me { flex-direction: row-reverse; }
+
+.gf-bubble {
+  max-width: 76%;
+  padding: 9px 13px;
+  border-radius: 15px;
+  font-size: 13.5px;
+  line-height: 1.62;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--surface-2);
+  border: 1px solid var(--separator);
+  color: var(--text);
+}
+.gf-msg.me .gf-bubble {
+  background: var(--accent-fill-2);
+  border-color: transparent;
+}
+
+.gf-msg-time { flex: none; font-size: 10.5px; color: var(--text-3); padding-bottom: 3px; }
+
+/* ── 日志（等宽，按前缀上色） ── */
+.gf-log {
+  max-height: 62vh;
+  overflow: auto;
+  padding: 13px 15px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.gf-log-line {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.78;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.gf-log-line.in { color: var(--text); }
+.gf-log-line.out { color: var(--accent); }
+.gf-log-line.tool { color: #7a6bd6; }
+.gf-log-line.think { color: var(--text-3); font-style: italic; }
+.gf-log-line.mem { color: var(--success); }
+.gf-log-line.usage { color: var(--text-3); }
+.gf-log-line.img { color: var(--warn); }
+.gf-log-line.warn { color: var(--danger); }
+
+/* ── 设置行 ── */
+.gf-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 0;
+}
+.gf-row + .gf-row { border-top: 1px solid var(--separator); }
+.gf-row-label { flex: 1; min-width: 0; font-size: 13.5px; color: var(--text); }
+.gf-row-label small { display: block; margin-top: 3px; font-size: 11.5px; color: var(--text-3); }
+.gf-row-ctl { flex: none; display: flex; align-items: center; gap: 6px; }
+
+/* 数字输入框：借用面板 .input，只收窄一点 */
+.gf-num {
+  width: 84px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 窄屏 ── */
+@media (max-width: 720px) {
+  .gf-metrics { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .gf-profile { flex-wrap: wrap; gap: 14px; padding: 18px; }
+  .gf-avatar { width: 74px; height: 74px; border-radius: 17px; }
+  .gf-nick { font-size: 18px; }
+  .gf-tools { flex-direction: row; width: 100%; }
+  .gf-tools .btn { flex: 1; }
+  .gf-bubble { max-width: 86%; }
+  .gf-metric .s-main { font-size: 19px; }
+  .gf-num { width: 68px; }
+}
+
+/* ── 杂项 ── */
+.gf-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.gf-full { width: 100%; }
+.gf-hint {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text-3);
+}
+.gf-editor {
+  width: 100%;
+  min-height: 320px;
+  padding: 14px;
+  border: 1px solid var(--separator-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.75;
+  resize: vertical;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.gf-editor:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }

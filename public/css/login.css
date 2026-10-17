@@ -1,0 +1,365 @@
+/* ============================================================
+   Ax 面板 · 登录页
+   只被 login.html 引用；配色全部走 style.css 的变量，跟随亮暗主题
+
+   动效约定：只动 transform / opacity / translate / scale / rotate 这几个合成属性，
+   一帧都不用重排；blur 光斑是唯一的例外，所以数量压在 3 个。
+   位移一律走 translate / scale / rotate 独立属性，把 transform 让给鼠标跟随的倾斜，
+   两套动效叠在一起互不打架。
+   ============================================================ */
+
+/* ---------- 页面与背景 ---------- */
+.login-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(165deg, var(--bg-a) 0%, var(--bg-b) 100%);
+  overflow: hidden;
+}
+
+/* 背景层：三团柔光 + 一层极淡点阵。
+   光斑各自缓慢漂移，长时间停在登录页也不会显得是张死图 */
+.login-bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+
+.lg-blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .55; }
+.lg-blob.a { width: 340px; height: 340px; background: var(--accent-2); top: -100px; right: -80px; animation: blobFloat 21s ease-in-out infinite; }
+.lg-blob.b { width: 300px; height: 300px; background: #ffd9b0; bottom: -110px; left: -90px; animation: blobFloat 27s ease-in-out infinite reverse; }
+.lg-blob.c {
+  width: 260px; height: 260px;
+  top: calc(50% - 130px); left: calc(50% - 130px);
+  background: var(--accent); opacity: .22;
+  animation: blobFloat 33s ease-in-out infinite;
+}
+@keyframes blobFloat {
+  0%, 100% { translate: 0 0; scale: 1; }
+  33%      { translate: 32px -26px; scale: 1.12; }
+  66%      { translate: -20px 22px; scale: .94; }
+}
+
+/* 点阵越靠近边缘越淡，中间留白给卡片。
+   元素比视口大一圈，位移正好一个格子（22px）就循环，接缝看不出来 */
+.lg-grid {
+  position: absolute;
+  inset: -44px;
+  opacity: .5;
+  background-image: radial-gradient(circle, var(--separator-2) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 76% 60% at 50% 50%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(ellipse 76% 60% at 50% 50%, #000 0%, transparent 78%);
+  animation: gridDrift 30s linear infinite;
+}
+@keyframes gridDrift { to { translate: 22px 22px; } }
+
+/* 深色下暖色光斑会过曝，换成两个粉调 */
+html[data-theme="dark"] .lg-blob.b { background: #7a4a60; }
+html[data-theme="dark"] .lg-blob.c { opacity: .3; }
+
+.login-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+}
+
+/* ---------- 卡片 ---------- */
+/* 舞台这层负责入场和透视，卡片自己留给鼠标跟随的倾斜 */
+.login-stage {
+  width: 100%;
+  max-width: 348px;
+  perspective: 1000px;
+  animation: cardIn .5s cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes cardIn { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+
+.login-card {
+  position: relative;
+  width: 100%;
+  overflow: hidden;              /* 让顶部光带贴合圆角，别溢出成方角 */
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  backdrop-filter: saturate(180%) blur(30px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .55);
+  padding: 34px 26px 26px;
+  text-align: center;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform .18s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease, scale .3s ease;
+}
+/* 触摸端没有指针可跟，改成自己慢慢摆 */
+@media (hover: none) {
+  .login-card { animation: sway 11s ease-in-out infinite; }
+}
+@keyframes sway {
+  0%, 100% { translate: 0 0; rotate: y -1.8deg; }
+  50%      { translate: 0 -6px; rotate: y 1.8deg; }
+}
+
+/* 跟随鼠标的一团高光（--gx/--gy 由 login.html 写入） */
+.login-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(240px circle at var(--gx, 50%) var(--gy, 0%), rgba(255, 255, 255, .5), transparent 68%);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+@media (hover: hover) {
+  .login-card:hover::after { opacity: 1; }
+  .login-card:hover { box-shadow: var(--shadow), 0 18px 40px rgba(242, 115, 155, .18), inset 0 1px 0 rgba(255, 255, 255, .55); }
+}
+html[data-theme="dark"] .login-card::after { background: radial-gradient(240px circle at var(--gx, 50%) var(--gy, 0%), rgba(255, 255, 255, .14), transparent 68%); }
+
+/* 卡片顶部：一条渐隐彩带 + 一团向下的柔光 */
+.lc-sheen {
+  position: absolute;
+  z-index: 2;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent) 22%, var(--accent-2) 50%, var(--warn) 78%, transparent);
+  background-size: 200% 100%;
+  opacity: .85;
+  animation: sheenFlow 7s ease-in-out infinite;
+}
+@keyframes sheenFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: -64px; left: 50%;
+  width: 230px; height: 150px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, var(--accent-fill-2), transparent 70%);
+  pointer-events: none;
+}
+
+/* 每隔一会儿斜着扫过一道光，卡片就不是块死玻璃了 */
+.lc-shine {
+  position: absolute;
+  z-index: 2;
+  top: -60%; left: -70%;
+  width: 55%; height: 220%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .5), transparent);
+  rotate: 18deg;
+  opacity: 0;
+  pointer-events: none;
+  animation: shineSweep 8s ease-in-out infinite;
+}
+@keyframes shineSweep {
+  0%, 62%   { translate: -30% 0; opacity: 0; }
+  70%       { opacity: .9; }
+  88%, 100% { translate: 260% 0; opacity: 0; }
+}
+html[data-theme="dark"] .lc-shine { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .22), transparent); }
+
+/* 内容一律压在两层光效之上 */
+.login-brand, .login-sep, .login-field, .login-submit { position: relative; z-index: 1; }
+
+/* ---------- 品牌区 ---------- */
+.login-brand { display: flex; flex-direction: column; align-items: center; }
+
+/* 渐变圆环包住 logo：外圈是旋转的锥形渐变，比原来的纯白描边更有辨识度，也不离开粉调 */
+.login-logo-ring {
+  position: relative;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 50%;
+  margin-bottom: 14px;
+  overflow: hidden;
+  background: var(--separator);
+  box-shadow: 0 10px 24px rgba(242, 115, 155, .26);
+}
+.login-logo-ring::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(from 0deg, var(--accent), var(--accent-2), #ffd9b0, var(--warn), var(--accent));
+  animation: ringSpin 9s linear infinite;
+}
+@keyframes ringSpin { to { rotate: 360deg; } }
+html[data-theme="dark"] .login-logo-ring::before { background: conic-gradient(from 0deg, var(--accent), var(--accent-2), #c98aa6, var(--warn), var(--accent)); }
+
+.login-logo {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface);
+  border: 2px solid var(--surface);
+}
+
+.login-card h1 { position: relative; margin: 0; font-size: 19px; font-weight: 600; letter-spacing: .4px; }
+.login-sub { position: relative; margin: 4px 0 18px; font-size: 12px; color: var(--text-2); letter-spacing: .6px; }
+
+/* 品牌与表单之间一条渐隐细线 */
+.login-sep {
+  height: 1px;
+  margin: 0 6px 20px;
+  background: linear-gradient(90deg, transparent, var(--separator-2), transparent);
+}
+
+/* 入场：品牌 → 细线 → 输入框 → 按钮 依次浮上来。
+   用 translate 而非 transform 做位移，否则按钮 hover 的 transform 会被动画层压掉 */
+.login-brand, .login-sep, .login-field, .login-submit { animation: riseIn .52s cubic-bezier(.22, 1, .36, 1) both; }
+.login-brand  { animation-delay: .08s; }
+.login-sep    { animation-delay: .14s; }
+.login-field  { animation-delay: .20s; }
+.login-submit { animation-delay: .26s; }
+@keyframes riseIn { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
+
+/* ---------- 输入框 ---------- */
+.login-field { margin-bottom: 14px; }
+
+/* 左侧小锁：与右侧的显示/隐藏按钮等宽，输入框里居中的文字才不会被挤偏 */
+.login-field .lf-icon {
+  position: absolute;
+  left: 5px; top: 50%;
+  transform: translateY(-50%);
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-3);
+  pointer-events: none;
+  transition: color .18s ease;
+}
+.login-field:focus-within .lf-icon { color: var(--accent); animation: iconPop .45s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes iconPop { 0% { scale: .78; } 60% { scale: 1.16; } 100% { scale: 1; } }
+
+.login-field input {
+  width: 100%;
+  height: 46px;
+  padding: 0 44px;
+  border: 1px solid var(--separator-2);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  text-align: center;
+  letter-spacing: 1px;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.login-field input::placeholder { color: var(--text-3); letter-spacing: .3px; }
+.login-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); animation: ringOut .5s ease; }
+@keyframes ringOut { from { box-shadow: 0 0 0 0 var(--ring); } to { box-shadow: 0 0 0 3px var(--ring); } }
+
+/* 密码框：关掉浏览器自带的小眼睛（有的浏览器画、有的不画），统一用下面自绘的按钮 */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear { display: none; }
+
+.pw-toggle {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 34px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: none; border-radius: 9px; cursor: pointer;
+  color: var(--text-3); transition: color .18s ease, background .18s ease;
+}
+.pw-toggle:hover { color: var(--text); background: var(--separator); }
+.pw-toggle svg { display: block; }
+.pw-toggle .pw-eye-off { display: none; }
+.pw-toggle[aria-pressed="true"] .pw-eye { display: none; }
+.pw-toggle[aria-pressed="true"] .pw-eye-off { display: block; }
+
+/* 出错时输入框红边 + 轻微左右抖一下 */
+.login-field.err input { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-fill); animation: fieldShake .4s ease; }
+@keyframes fieldShake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(2px); }
+}
+
+/* ---------- 提交按钮 ---------- */
+/* 用 .login-card 打头压过 style.css 的 .btn / .btn-primary:hover */
+.login-card .btn.login-submit {
+  height: 46px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent) 100%);
+  background-size: 220% 100%;
+  box-shadow: 0 10px 22px rgba(242, 115, 155, .30);
+  animation: riseIn .52s cubic-bezier(.22, 1, .36, 1) .26s both, btnFlow 6s ease-in-out infinite;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+@keyframes btnFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.login-card .btn.login-submit:hover:not(:disabled) { box-shadow: 0 14px 26px rgba(242, 115, 155, .42); transform: translateY(-1px); filter: saturate(1.08); }
+.login-card .btn.login-submit:active:not(:disabled) { transform: translateY(0) scale(.99); }
+.login-card .btn.login-submit:disabled { opacity: .78; cursor: default; }
+
+.ls-spin {
+  display: none;
+  width: 15px; height: 15px;
+  border: 2px solid rgba(255, 255, 255, .45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+.login-submit[data-loading] .ls-spin { display: block; }
+
+/* 验证通过：整张卡片轻轻涨一下再跳走 */
+.login-card.done { scale: 1.03; box-shadow: var(--shadow), 0 20px 44px rgba(242, 115, 155, .34); }
+
+/* ---------- 错误提示 ---------- */
+/* grid 0fr→1fr：高度从 0 展开，收起来时不占位也不会跳一下 */
+.login-msg {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  opacity: 0;
+  transition: grid-template-rows .28s ease, opacity .2s ease, margin-top .28s ease;
+}
+.login-msg.show { grid-template-rows: 1fr; margin-top: 14px; opacity: 1; }
+
+.lm-clip { min-height: 0; overflow: hidden; }
+
+.lm-pill {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--danger-fill);
+  color: var(--danger);
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+}
+.login-msg svg { flex: 0 0 auto; }
+
+/* ---------- 页脚 ---------- */
+.login-foot {
+  display: flex; align-items: center; gap: 7px;
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: .5px;
+  color: var(--text-3);
+  transition: color .25s ease;
+}
+.login-foot .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); transition: background .25s ease; }
+.login-foot.ok { color: var(--text-2); }
+/* 探活成功就让圆点轻轻跳一下，像心跳 */
+.login-foot.ok .dot { background: var(--success); animation: dotPulse 2.6s ease-out infinite; }
+.login-foot.bad .dot { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-fill); }
+@keyframes dotPulse {
+  0%        { box-shadow: 0 0 0 0 var(--success-fill); }
+  70%, 100% { box-shadow: 0 0 0 7px transparent; }
+}
+
+@media (max-width: 400px) {
+  .login-card { padding: 28px 20px 22px; }
+}

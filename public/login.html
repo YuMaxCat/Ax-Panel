@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+// 与面板同源的主题偏好，避免登录页白闪
+(function () {
+  var t = 'auto';
+  try { t = localStorage.getItem('theme') || 'auto'; } catch (e) { /* ignore */ }
+  var dark = t === 'dark' || (t === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+})();
+</script>
+<title>登录 · Ax 面板</title>
+<link rel="icon" id="favicon" href="logo.png">
+<link rel="stylesheet" href="css/style.css?v=23">
+<link rel="stylesheet" href="css/login.css?v=25">
+</head>
+<body class="login-body">
+<div class="login-bg" aria-hidden="true">
+  <span class="lg-grid"></span>
+  <span class="lg-blob a"></span>
+  <span class="lg-blob b"></span>
+  <span class="lg-blob c"></span>
+</div>
+
+<div class="login-wrap">
+  <!-- 透视与入场动画放在舞台这层，卡片自己的 transform 留给鼠标跟随的倾斜 -->
+  <div class="login-stage" id="stage">
+    <form class="login-card" id="form" autocomplete="off">
+      <span class="lc-sheen" aria-hidden="true"></span>
+      <span class="lc-shine" aria-hidden="true"></span>
+
+      <div class="login-brand">
+        <span class="login-logo-ring"><img class="login-logo" src="logo.png" alt="logo" data-logo></span>
+        <h1 id="pname">Ax 面板</h1>
+        <p class="login-sub">服务器管理面板</p>
+      </div>
+
+      <div class="login-sep" aria-hidden="true"></div>
+
+      <div class="login-field" id="field">
+        <span class="lf-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.7" r="1.2"/></svg>
+        </span>
+        <input id="key" type="password" placeholder="请输入访问密钥" aria-label="访问密钥" autocomplete="current-password" required>
+        <button type="button" class="pw-toggle" data-pw-toggle="key" aria-label="显示密码" aria-pressed="false" title="显示/隐藏密码">
+          <svg class="pw-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="pw-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.6a3 3 0 0 0 4.24 4.24"/><path d="M9.9 5.7A9.8 9.8 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17.6 17.6 0 0 1-3.4 4.3"/><path d="M6.3 6.7A17.3 17.3 0 0 0 2.5 12S6 18.5 12 18.5a9.7 9.7 0 0 0 4-.85"/></svg>
+        </button>
+      </div>
+
+      <button class="btn btn-block login-submit" id="submit" type="submit">
+        <span class="ls-spin" aria-hidden="true"></span>
+        <span class="ls-label">进入面板</span>
+      </button>
+
+      <!-- 展开动画靠 grid 0fr→1fr：必须多一层无内边距的裁剪层，
+           带 padding 的元素本身压不到 0（border-box 不会小于 padding box） -->
+      <div class="login-msg" id="msg" role="alert">
+        <div class="lm-clip">
+          <p class="lm-pill">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.4h.01"/></svg>
+            <span id="msgText"></span>
+          </p>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <p class="login-foot" id="foot"><span class="dot"></span><span id="footText">连接中…</span></p>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById('form');
+  var stage = document.getElementById('stage');
+  var key = document.getElementById('key');
+  var field = document.getElementById('field');
+  var msg = document.getElementById('msg');
+  var msgText = document.getElementById('msgText');
+  var btn = document.getElementById('submit');
+  var btnLabel = btn.querySelector('.ls-label');
+  var foot = document.getElementById('foot');
+  var footText = document.getElementById('footText');
+
+  function setLoading(on, text) {
+    if (on) btn.setAttribute('data-loading', '');
+    else btn.removeAttribute('data-loading');
+    btn.disabled = on;
+    btnLabel.textContent = text || '进入面板';
+  }
+
+  function showError(text) {
+    msgText.textContent = text;
+    msg.classList.add('show');
+    field.classList.add('err');
+  }
+
+  function clearError() {
+    msg.classList.remove('show');
+    field.classList.remove('err');
+  }
+
+  // 面板名 / Logo 以服务端配置为准，取不到就保留 HTML 里的默认值；
+  // 顺带把这次请求当作一次探活，决定页脚那颗小圆点的颜色
+  fetch('/api/meta').then(function (r) { return r.json(); }).then(function (d) {
+    foot.classList.add('ok');
+    footText.textContent = '服务正常';
+    if (!d) return;
+    if (d.name) {
+      document.title = '登录 · ' + d.name;
+      document.getElementById('pname').textContent = d.name;
+    }
+    if (d.logo) {
+      var url = '/api/branding/logo?v=' + d.logo;
+      var logo = document.querySelector('[data-logo]');
+      if (logo) logo.src = url;
+      var fav = document.getElementById('favicon');
+      if (fav) fav.href = url;
+    }
+  }).catch(function () {
+    foot.classList.add('bad');
+    footText.textContent = '连接不上服务端';
+  });
+
+  key.addEventListener('input', clearError);
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    clearError();
+    setLoading(true, '验证中…');
+    try {
+      var r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ key: key.value })
+      });
+      var d = {};
+      try { d = await r.json(); } catch (e2) { /* ignore */ }
+      if (!r.ok) throw new Error(d.error || ('登录失败 ' + r.status));
+      btnLabel.textContent = '欢迎回来';
+      form.classList.add('done');   // 卡片涨一下再跳，别切得太硬
+      setTimeout(function () { location.href = '/'; }, 320);
+    } catch (err) {
+      showError(err.message);
+      setLoading(false);
+      key.select();
+    }
+  });
+
+  // 鼠标跟随微倾斜：光标在卡片哪一侧，卡片就往哪边轻轻转一点，
+  // 同时把位置写进 --gx/--gy 让那团高光跟着走。
+  // 只在有精确指针的设备上开；触摸端交给 CSS 的缓慢摆动，省得白算
+  (function () {
+    if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    var MAX = 4.5; // 最大倾角（度），再大就晃眼了
+    function move(e) {
+      var r = stage.getBoundingClientRect();
+      var px = (e.clientX - r.left) / r.width;
+      var py = (e.clientY - r.top) / r.height;
+      form.style.setProperty('--ry', ((px - .5) * 2 * MAX).toFixed(2) + 'deg');
+      form.style.setProperty('--rx', ((.5 - py) * 2 * MAX).toFixed(2) + 'deg');
+      form.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
+      form.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+    }
+    function reset() {
+      form.style.setProperty('--rx', '0deg');
+      form.style.setProperty('--ry', '0deg');
+    }
+    stage.addEventListener('mousemove', move);
+    stage.addEventListener('mouseleave', reset);
+  })();
+
+  // 密码显示 / 隐藏：点击切换，输入框失焦自动收回
+  // 通用实现：按钮写 data-pw-toggle="输入框id" 即生效，图标显隐交给 CSS，JS 不拼图标
+  var btns = document.querySelectorAll('.pw-toggle[data-pw-toggle]');
+  for (var i = 0; i < btns.length; i++) {
+    (function (b) {
+      var input = document.getElementById(b.getAttribute('data-pw-toggle'));
+      if (!input) return;
+      function setShow(show) {
+        input.type = show ? 'text' : 'password';
+        b.setAttribute('aria-pressed', show ? 'true' : 'false');
+        b.setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
+      }
+      // 阻止按钮抢走输入框焦点：否则点击瞬间 input 先失焦，会把刚展开的明文又收回
+      b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      b.addEventListener('click', function () { setShow(input.type === 'password'); });
+      input.addEventListener('blur', function () { setShow(false); });
+    })(btns[i]);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#fffafc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17131a" media="(prefers-color-scheme: dark)">
+<title>维护中</title>
+<!--
+  样式、Logo、花瓣图形全部内联：维护态下目标站点的所有请求都会被 503 拦截，
+  任何外链资源（图片 / 字体 / CSS）都会裂掉，这页必须自包含。
+
+  Logo 由 public/logo.png 生成：居中裁正方形 → 320×320 → JPEG q88 → base64，
+  换 Logo 时重跑 tools/make-maint-logo.sh 即可，不用手改下面那串 base64。
+-->
+<style>
+  /* 主题 token 与面板主站 public/css/style.css 保持一致 */
+  :root {
+    color-scheme: light;
+
+    --bg: #fdf6f9;
+    --bg-a: #fffafc;
+
+    --glass: rgba(255, 255, 255, .66);
+    --glass-border: rgba(255, 255, 255, .9);
+
+    --text: #3d3238;
+    --text-2: #8d7c85;
+    --text-3: #b7a7b0;
+
+    --accent: #f2739b;
+    --separator: rgba(180, 140, 160, .16);
+    --shadow: 0 20px 48px -18px rgba(206, 110, 146, .34), 0 3px 10px rgba(206, 110, 146, .06);
+    --glow: rgba(242, 115, 155, .30);
+    --ring: rgba(255, 255, 255, .94);
+
+    --page-bg:
+      radial-gradient(126% 66% at 50% -12%, #ffe9f2 0%, rgba(255, 233, 242, 0) 62%),
+      radial-gradient(104% 58% at 50% 112%, #fff0e6 0%, rgba(255, 240, 230, 0) 58%),
+      var(--bg-a);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+
+      --bg: #1a1519;
+      --bg-a: #201a1f;
+
+      --glass: rgba(40, 32, 38, .64);
+      --glass-border: rgba(255, 190, 215, .12);
+
+      --text: #f2e8ee;
+      --text-2: #bda9b4;
+      --text-3: #8a7681;
+
+      --accent: #ff8fb1;
+      --separator: rgba(255, 190, 215, .12);
+      --shadow: 0 20px 48px -18px rgba(0, 0, 0, .62), 0 3px 10px rgba(0, 0, 0, .3);
+      --glow: rgba(255, 143, 177, .22);
+      --ring: rgba(255, 190, 215, .16);
+
+      --page-bg:
+        radial-gradient(126% 66% at 50% -12%, #2b1f29 0%, rgba(43, 31, 41, 0) 62%),
+        radial-gradient(104% 58% at 50% 112%, #241a22 0%, rgba(36, 26, 34, 0) 58%),
+        var(--bg-a);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+                 "Microsoft YaHei", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--page-bg);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+    padding: calc(28px + env(safe-area-inset-top)) 22px calc(28px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+
+  /* ---------- 飘落花瓣 ---------- */
+  /* 外层负责竖直下落，内层负责左右摇曳与翻转，两层周期不同步 → 轨迹自然不重复 */
+  .petal {
+    position: fixed;
+    top: -16vh;
+    z-index: 0;
+    pointer-events: none;
+    will-change: transform;
+    animation: petal-fall var(--dur) linear var(--delay) infinite;
+  }
+  .petal-i {
+    display: block;
+    line-height: 0;
+    transform-origin: 50% 22%;
+    animation: petal-sway var(--sdur) ease-in-out var(--sdelay) infinite alternate;
+  }
+  @keyframes petal-fall {
+    0%   { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(var(--drift), 132vh, 0); }
+  }
+  @keyframes petal-sway {
+    from { transform: translateX(calc(var(--amp) * -1)) rotate(var(--r1)); }
+    to   { transform: translateX(var(--amp)) rotate(var(--r2)); }
+  }
+
+  /* ---------- 卡片 ---------- */
+  .card {
+    position: relative;
+    z-index: 2;
+    margin: auto;
+    width: 100%;
+    max-width: 392px;
+    padding: 42px 32px 30px;
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    backdrop-filter: blur(22px) saturate(170%);
+    border: 1px solid var(--glass-border);
+    border-radius: 26px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    animation: rise .62s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px) scale(.982); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* ---------- Logo ---------- */
+  .avatar {
+    position: relative;
+    width: 116px;
+    height: 116px;
+    margin: 0 auto 20px;
+    animation: float 6.4s ease-in-out infinite;
+  }
+  /* 身后一圈随主题变化的柔光，让圆形头像不孤立地贴在玻璃上 */
+  .avatar::before {
+    content: "";
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--glow) 0%, rgba(255, 255, 255, 0) 70%);
+  }
+  .avatar img {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid var(--ring);
+    box-shadow: 0 10px 24px -10px var(--glow);
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+
+  h1 {
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: .6px;
+  }
+  p.desc {
+    margin-top: 12px;
+    font-size: 13.5px;
+    line-height: 1.9;
+    color: var(--text-2);
+  }
+  .meta {
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--separator);
+    font-size: 12px;
+    color: var(--text-3);
+    letter-spacing: .3px;
+  }
+  .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 7px;
+    vertical-align: middle;
+    animation: pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+  @media (max-width: 380px) {
+    .card { padding: 36px 24px 26px; border-radius: 24px; }
+    .avatar { width: 102px; height: 102px; margin-bottom: 17px; }
+    h1 { font-size: 19px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card, .avatar, .dot { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="avatar">
+    <img src="data:image/jpeg;base64,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" alt="" width="320" height="320" decoding="async">
+  </div>
+
+  <h1>网站维护中</h1>
+  <p class="desc">
+    这个站点正在短暂休息中<br>
+    请稍后再来看看吧～
+  </p>
+  <div class="meta">
+    <span class="dot"></span>维护中 · 由 Ax 面板托管
+  </div>
+</div>
+
+<script>
+  /* 飘落花瓣：纯装饰、无外部资源。
+     竖直下落与左右摇曳分属两层，周期互质 → 不会出现整齐划一的机械感。 */
+  (function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var NS = 'http://www.w3.org/2000/svg';
+    var PETAL_D = 'M12 23.4C7.6 18.6 3.8 13.4 3.8 8.8c0-3.6 2.4-6.2 5.1-6.2 1.5 0 2.5 1 3.1 2.3.6-1.3 1.6-2.3 3.1-2.3 2.7 0 5.1 2.6 5.1 6.2 0 4.6-3.8 9.8-8.2 14.6z';
+    // 深色主题下换成更沉的粉，免得花瓣在暗底上发白刺眼
+    var DARK = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var COLORS = DARK
+      ? ['#8c5568', '#9d6478', '#7d4a5c', '#a87388']
+      : ['#ffc6d9', '#ffd6e4', '#ffb3cd', '#ffe4ee'];
+
+    // 三档景深：远景小而朦胧、慢；近景大而清晰、快
+    var TIERS = [
+      { size: 10, blur: 0.8,  opacity: .38, dur: [17, 25], sway: [4.5, 7],   amp: [7, 15],  weight: 3 },
+      { size: 13, blur: 0.35, opacity: .60, dur: [13, 19], sway: [3.5, 5.5], amp: [12, 22], weight: 3 },
+      { size: 17, blur: 0,    opacity: .78, dur: [10, 15], sway: [2.8, 4.6], amp: [16, 30], weight: 2 }
+    ];
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function pickTier() {
+      var total = 0, i;
+      for (i = 0; i < TIERS.length; i++) total += TIERS[i].weight;
+      var r = Math.random() * total;
+      for (i = 0; i < TIERS.length; i++) { r -= TIERS[i].weight; if (r <= 0) return TIERS[i]; }
+      return TIERS[TIERS.length - 1];
+    }
+
+    function build(t) {
+      var wrap = document.createElement('div');
+      wrap.className = 'petal';
+      var inner = document.createElement('div');
+      inner.className = 'petal-i';
+
+      var svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('width', t.size);
+      svg.setAttribute('height', t.size);
+      svg.setAttribute('aria-hidden', 'true');
+      var path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', PETAL_D);
+      path.setAttribute('fill', pick(COLORS));
+      svg.appendChild(path);
+      inner.appendChild(svg);
+      wrap.appendChild(inner);
+
+      var dur = rand(t.dur[0], t.dur[1]);
+      var sdur = rand(t.sway[0], t.sway[1]);
+      var r1 = rand(0, 200);
+      var r2 = r1 + rand(120, 300) * (Math.random() < 0.5 ? -1 : 1);
+
+      wrap.style.left = rand(0, 100).toFixed(2) + 'vw';
+      wrap.style.opacity = t.opacity;
+      if (t.blur) inner.style.filter = 'blur(' + t.blur + 'px)';
+      wrap.style.setProperty('--dur', dur.toFixed(2) + 's');
+      wrap.style.setProperty('--delay', (-rand(0, dur)).toFixed(2) + 's');
+      wrap.style.setProperty('--drift', rand(-5, 5).toFixed(2) + 'vw');
+      wrap.style.setProperty('--amp', rand(t.amp[0], t.amp[1]).toFixed(1) + 'px');
+      wrap.style.setProperty('--sdur', sdur.toFixed(2) + 's');
+      wrap.style.setProperty('--sdelay', (-rand(0, sdur)).toFixed(2) + 's');
+      wrap.style.setProperty('--r1', r1.toFixed(1) + 'deg');
+      wrap.style.setProperty('--r2', r2.toFixed(1) + 'deg');
+
+      return wrap;
+    }
+
+    var count = window.innerWidth >= 700 ? 9 : 6;
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < count; i++) frag.appendChild(build(pickTier()));
+    document.body.appendChild(frag);
+  })();
+</script>
+</body>
+</html>
